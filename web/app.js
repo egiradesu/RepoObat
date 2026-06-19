@@ -39,6 +39,7 @@ function norm(s) {
 })();
 
 // ----- encrypted data: decrypt in-browser with the access password -----
+// Small fields (salt/iv): a tiny sync loop is fine.
 function b64ToBytes(b64) {
   const bin = atob(b64);
   const u = new Uint8Array(bin.length);
@@ -46,23 +47,42 @@ function b64ToBytes(b64) {
   return u;
 }
 
-async function decryptData(password) {
+// Large ciphertext: decode via the browser's native base64 decoder instead of a
+// multi-million-iteration JS loop, so the main thread never blocks on mobile.
+// (data: URLs are not intercepted by the service worker.)
+async function b64ToBytesFast(b64) {
+  const res = await fetch(`data:application/octet-stream;base64,${b64}`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+async function decryptData(password, setStatus) {
+  const note = (t) => { if (setStatus) setStatus(t); };
   let p;
   try {
-    const res = await fetch('data.enc.json', { cache: 'no-store' });
+    note('Mengunduh data…');
+    // Abort a stalled download instead of hanging forever on spotty mobile signal.
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 20000);
+    let res;
+    try {
+      res = await fetch('data.enc.json', { cache: 'no-store', signal: ctrl.signal });
+    } finally { clearTimeout(to); }
     if (!res.ok) throw 0;
     p = await res.json();
   } catch (e) {
     const err = new Error('network'); err.kind = 'net'; throw err;
   }
+  note('Mendekripsi…');
   const baseKey = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
   const key = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: b64ToBytes(p.salt), iterations: p.iter, hash: 'SHA-256' },
     baseKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  const ct = await b64ToBytesFast(p.ct);
   // AES-GCM decrypt throws if the password is wrong (auth tag mismatch).
   const plain = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: b64ToBytes(p.iv) }, key, b64ToBytes(p.ct));
+    { name: 'AES-GCM', iv: b64ToBytes(p.iv) }, key, ct);
+  note('Menyiapkan…');
   return JSON.parse(new TextDecoder().decode(plain));
 }
 
@@ -84,8 +104,9 @@ function initApp(d) {
 
   async function tryOpen(password, silent) {
     err.textContent = ''; btn.disabled = true; btn.textContent = 'Membuka…';
+    const setStatus = (t) => { btn.textContent = t; };  // doubles as a stall indicator
     try {
-      const d = await decryptData(password);
+      const d = await decryptData(password, setStatus);
       try { remember.checked ? localStorage.setItem('pw', password) : localStorage.removeItem('pw'); } catch (e) {}
       initApp(d);
       gate.classList.add('hidden');
@@ -93,7 +114,7 @@ function initApp(d) {
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Buka';
       if (e && e.kind === 'net') {        // keep saved password; just a connection issue
-        err.textContent = 'Gagal memuat data — cek koneksi.';
+        err.textContent = 'Gagal memuat data — cek koneksi, lalu coba lagi.';
         return;
       }
       try { localStorage.removeItem('pw'); } catch (_) {}  // wrong password
