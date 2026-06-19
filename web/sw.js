@@ -1,5 +1,5 @@
 // Simple offline cache for the RepoObat PWA.
-const CACHE = 'repoobat-v9';
+const CACHE = 'repoobat-v10';
 const ASSETS = ['./', './index.html', './app.js', './manifest.json', './icon.svg', './data.enc.json'];
 
 self.addEventListener('install', (e) => {
