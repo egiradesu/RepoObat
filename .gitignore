@@ -20,3 +20,6 @@ Produk Obat BRILife per 24 April 2026.xlsx
 node_modules/
 Thumbs.db
 .DS_Store
+
+.vercel
+.env*.local

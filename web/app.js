@@ -51,8 +51,13 @@ function b64ToBytes(b64) {
 // multi-million-iteration JS loop, so the main thread never blocks on mobile.
 // (data: URLs are not intercepted by the service worker.)
 async function b64ToBytesFast(b64) {
-  const res = await fetch(`data:application/octet-stream;base64,${b64}`);
-  return new Uint8Array(await res.arrayBuffer());
+  try {
+    const res = await fetch(`data:application/octet-stream;base64,${b64}`);
+    if (!res.ok) throw 0;
+    return new Uint8Array(await res.arrayBuffer());
+  } catch (e) {
+    return b64ToBytes(b64);   // fallback: never let the fast path break login
+  }
 }
 
 async function decryptData(password, setStatus) {
