@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#ffffff" />
+<meta name="color-scheme" content="light only" />
+<title>RepoObat</title>
+<link rel="manifest" href="manifest.json" />
+<script>
+  // Apply saved theme before paint to avoid a flash. Default: light.
+  try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light'; } catch (e) {}
+</script>
+<style>
+  :root{
+    --bg:#f3f7ff; --surface:#ffffff; --surface-2:#f8fbff;
+    --ink:#0b1a33; --muted:#5b6b85; --faint:#94a2bd;
+    --line:#e7eefb; --line-2:#dbe6fa;
+    --accent:#2563eb; --accent-ink:#1d4ed8; --accent-soft:#e8f0ff;
+    --foi:#3b82f6; --primaya:#8b5cf6; --brilife:#ec4899;
+    --warn-bg:#fff8ec; --warn-ink:#a66400; --warn-bar:#f0b429;
+    --radius:18px; --radius-sm:12px;
+    --shadow:0 1px 2px rgba(37,99,235,.05), 0 10px 26px -14px rgba(37,99,235,.22);
+  }
+  html[data-theme="dark"]{
+    --bg:#0a0f1a; --surface:#111a2b; --surface-2:#0e1626;
+    --ink:#e8eefb; --muted:#92a1bd; --faint:#5d6b85;
+    --line:#1c2840; --line-2:#243352;
+    --accent:#3b82f6; --accent-ink:#93c5fd; --accent-soft:#13243f;
+    --warn-bg:#241b08; --warn-ink:#f0c674; --warn-bar:#b5872a;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{ -webkit-text-size-adjust:100%; color-scheme:light }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    font-feature-settings:"cv05","ss01"; letter-spacing:-.01em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:20;
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    -webkit-backdrop-filter:saturate(180%) blur(16px);
+    backdrop-filter:saturate(180%) blur(16px);
+    border-bottom:1px solid var(--line);
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;
+  }
+  .bar{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .wordmark{display:flex; align-items:center; gap:9px; font-weight:650; font-size:17px; letter-spacing:-.02em}
+  .logo{
+    width:26px; height:26px; border-radius:8px; flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-ink));
+    display:grid; place-items:center; color:#fff;
+    box-shadow:0 2px 8px -2px color-mix(in srgb,var(--accent) 60%,transparent);
+  }
+  .logo svg{width:15px;height:15px}
+  .wordmark .tag{color:var(--faint); font-weight:450; font-size:12px; letter-spacing:0}
+  .right{display:flex; align-items:center; gap:10px}
+  .count{font-size:11.5px; color:var(--faint); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .themebtn{
+    flex:none; width:34px; height:34px; border-radius:10px; cursor:pointer;
+    border:1px solid var(--line-2); background:var(--surface); color:var(--muted);
+    display:grid; place-items:center; transition:background .15s, color .15s, border-color .15s;
+  }
+  .themebtn:active{background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent)}
+  .themebtn svg{width:17px; height:17px}
+  .themebtn .moon{display:none}
+  html[data-theme="dark"] .themebtn .sun{display:none}
+  html[data-theme="dark"] .themebtn .moon{display:block}
+
+  .searchwrap{position:relative; margin-top:13px}
+  .searchwrap .si{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; color:var(--faint); pointer-events:none;
+  }
+  #q{
+    width:100%; border:1px solid var(--line-2); border-radius:14px;
+    padding:13px 42px 13px 42px; font-size:16px; font-family:inherit;
+    background:var(--surface); color:var(--ink); outline:none;
+    transition:border-color .15s, box-shadow .15s; letter-spacing:-.01em;
+  }
+  #q::placeholder{color:var(--faint)}
+  #q:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent);
+  }
+  #clear{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    border:0; background:var(--line); color:var(--muted);
+    width:26px; height:26px; border-radius:50%; font-size:15px; line-height:1;
+    cursor:pointer; display:none; align-items:center; justify-content:center;
+  }
+
+  .filters{display:flex; gap:8px; margin-top:11px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none}
+  .filters::-webkit-scrollbar{display:none}
+  .chip{
+    flex:none; border:1px solid var(--line-2); background:var(--surface);
+    color:var(--muted); padding:6px 12px 6px 10px; border-radius:999px;
+    font-size:13px; font-weight:500; cursor:pointer; white-space:nowrap;
+    display:flex; align-items:center; gap:6px; letter-spacing:-.01em;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .chip .dot{width:7px; height:7px; border-radius:50%; transition:transform .15s}
+  .chip[aria-pressed="true"]{
+    background:var(--accent-soft); color:var(--accent-ink);
+    border-color:color-mix(in srgb,var(--accent) 35%,transparent);
+  }
+  .chip[aria-pressed="false"]{opacity:.6}
+  .chip[aria-pressed="false"] .dot{transform:scale(.7); filter:grayscale(.5)}
+
+  /* ---------- main ---------- */
+  main{padding:14px 14px 56px; max-width:720px; margin:0 auto}
+  .meta{color:var(--faint); font-size:12.5px; margin:2px 4px 14px; font-variant-numeric:tabular-nums}
+  .meta b{color:var(--muted); font-weight:600}
+
+  .grouphead{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; font-weight:650; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin:22px 4px 9px;
+  }
+  .grouphead:first-child{margin-top:4px}
+  .grouphead .gdot{width:8px; height:8px; border-radius:50%}
+  .grouphead .cnt{
+    margin-left:auto; font-size:11px; font-weight:600; letter-spacing:0;
+    color:var(--faint); background:var(--surface); border:1px solid var(--line);
+    padding:2px 8px; border-radius:999px; text-transform:none;
+  }
+
+  .card{
+    position:relative; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:14px 16px; margin-bottom:9px;
+    box-shadow:var(--shadow); transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .card:active{transform:scale(.992)}
+  .card .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .card .name{font-weight:650; font-size:15.5px; letter-spacing:-.02em; line-height:1.25}
+  .pill{
+    font-size:11.5px; font-weight:650; letter-spacing:-.01em;
+    color:var(--accent-ink); background:var(--accent-soft);
+    padding:2.5px 9px; border-radius:999px; white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .card .ing{font-size:13.5px; color:var(--muted); margin-top:6px; line-height:1.4}
+  .card .ing .lbl{color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.05em; margin-right:5px}
+  .card .ing .val{color:var(--ink); font-weight:500}
+  .ref{
+    display:inline-flex; align-items:center; gap:3px; vertical-align:middle;
+    font-size:10px; font-weight:600; color:var(--faint);
+    border:1px solid var(--line-2); border-radius:6px; padding:1px 5px; margin-left:6px;
+  }
+  .card .sub{
+    display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap;
+    font-size:12px; color:var(--faint); margin-top:9px;
+  }
+  .card .sub span{display:inline-flex; align-items:center; gap:5px}
+  .card .sub svg{width:13px; height:13px; opacity:.7; flex:none}
+  .card .note{
+    display:flex; gap:8px; align-items:flex-start;
+    font-size:12px; line-height:1.45; margin-top:10px;
+    padding:8px 11px 8px 10px; border-radius:10px;
+    background:var(--warn-bg); color:var(--warn-ink);
+    border-left:2.5px solid var(--warn-bar);
+  }
+  .card .note svg{width:14px; height:14px; flex:none; margin-top:1px}
+  mark{background:transparent; color:var(--accent-ink); font-weight:700; padding:0}
+
+  /* ---------- empty / hint ---------- */
+  .hint{color:var(--muted); text-align:center; padding:54px 24px; line-height:1.6}
+  .hint .big{font-size:16px; color:var(--ink); font-weight:600; letter-spacing:-.02em}
+  .hint .small{font-size:13.5px; color:var(--faint); margin-top:6px}
+  .sugg{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:20px}
+  .sugg button{
+    border:1px solid var(--line-2); background:var(--surface); border-radius:999px;
+    padding:8px 14px; font-size:13px; font-weight:500; color:var(--ink);
+    cursor:pointer; transition:border-color .15s, background .15s; letter-spacing:-.01em;
+  }
+  .sugg button:active{background:var(--accent-soft); border-color:var(--accent)}
+  footer{text-align:center; color:var(--faint); font-size:11px; padding:8px 0 16px}
+
+  /* ---------- password gate ---------- */
+  #gate{
+    position:fixed; inset:0; z-index:50; background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px calc(env(safe-area-inset-top) + 24px); gap:0;
+  }
+  #gate.hidden{display:none}
+  .gatebox{width:100%; max-width:340px; text-align:center}
+  .gatelogo{
+    width:54px; height:54px; border-radius:15px; margin:0 auto 18px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-ink));
+    display:grid; place-items:center; color:#fff;
+    box-shadow:0 8px 22px -8px color-mix(in srgb,var(--accent) 70%,transparent);
+  }
+  .gatelogo svg{width:28px; height:28px}
+  .gatebox h1{font-size:20px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px}
+  .gatebox p{font-size:13.5px; color:var(--muted); margin:0 0 22px; line-height:1.5}
+  #pw{
+    width:100%; border:1px solid var(--line-2); border-radius:13px;
+    padding:14px 14px; font-size:16px; font-family:inherit; text-align:center;
+    background:var(--surface); color:var(--ink); outline:none; letter-spacing:.02em;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  #pw:focus{border-color:var(--accent); box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 16%,transparent)}
+  #gateBtn{
+    width:100%; margin-top:10px; border:0; border-radius:13px; padding:14px;
+    font-size:15px; font-weight:650; font-family:inherit; color:#fff; cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent-ink));
+    transition:opacity .15s, transform .1s;
+  }
+  #gateBtn:active{transform:scale(.98)}
+  #gateBtn:disabled{opacity:.6; cursor:default}
+  .remember{display:flex; align-items:center; justify-content:center; gap:7px; margin-top:14px; font-size:13px; color:var(--muted)}
+  .remember input{width:16px; height:16px; accent-color:var(--accent)}
+  #gateErr{color:#dc2626; font-size:13px; margin-top:12px; min-height:16px}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gatebox">
+    <div class="gatelogo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10.5 20.5 4 14a4.95 4.95 0 0 1 7-7l6.5 6.5a4.95 4.95 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div>
+    <h1>RepoObat</h1>
+    <p>Masukkan kata sandi untuk membuka repositori obat.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="pw" type="password" inputmode="text" autocomplete="current-password"
+             placeholder="Kata sandi" enterkeyhint="go" />
+      <button id="gateBtn" type="submit">Buka</button>
+      <label class="remember"><input id="remember" type="checkbox" checked /> Ingat di perangkat ini</label>
+      <div id="gateErr"></div>
+    </form>
+  </div>
+</div>
+<header>
+  <div class="bar">
+    <div class="wordmark">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10.5 20.5 4 14a4.95 4.95 0 0 1 7-7l6.5 6.5a4.95 4.95 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/></svg></span>
+      RepoObat <span class="tag">cari per komposisi</span>
+    </div>
+    <div class="right">
+      <span class="count" id="count"></span>
+      <button class="themebtn" id="themebtn" aria-label="Ganti tema">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2 12h2.5M19.5 12H22M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 7 7 0 1 0 20 14.5Z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="searchwrap">
+    <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+    <input id="q" type="search" inputmode="search" autocomplete="off" enterkeyhint="search"
+           placeholder="Komposisi… mis. amlodipine" list="ings" />
+    <datalist id="ings"></datalist>
+    <button id="clear" aria-label="hapus">✕</button>
+  </div>
+  <div class="filters" id="filters"></div>
+</header>
+<main>
+  <div id="results"></div>
+  <div id="hint" class="hint">
+    <div class="big">Cari obat berdasarkan komposisi</div>
+    <div class="small">Hasil dikelompokkan per penyedia asuransi.</div>
+    <div class="sugg" id="sugg"></div>
+  </div>
+</main>
+<footer id="footer"></footer>
+<script src="app.js"></script>
+</body>
+</html>

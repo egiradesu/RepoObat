@@ -1,0 +1,17 @@
+# Decrypted full dataset — never commit; rebuild from the spreadsheets.
+/data.json
+
+# Access password / secrets
+.env
+.env.*
+
+# Vercel
+.vercel
+
+# Personal monitoring report (contains a doctor's name) — do not publish.
+*Laporan daily monitoring*.xlsx
+
+# Node / OS
+node_modules/
+Thumbs.db
+.DS_Store
