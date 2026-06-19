@@ -11,6 +11,11 @@
 # Personal monitoring report (contains a doctor's name) — do not publish.
 *Laporan daily monitoring*.xlsx
 
+# Raw proprietary insurer formularies — never leave the machine; rebuild data.json from these.
+Daftar Obat FOI 2026 untuk Telemedicine.xlsx
+Formularium obat Telemedicine Primayan Care (Update 7 April 2026).xlsx
+Produk Obat BRILife per 24 April 2026.xlsx
+
 # Node / OS
 node_modules/
 Thumbs.db
